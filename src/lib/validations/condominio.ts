@@ -25,7 +25,7 @@ export const moradorSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
   unidadeId: z.string().min(1, "Unidade obrigatória"),
-  vinculo: z.enum(["PROPRIETARIO", "INQUILINO", "DEPENDENTE"]).default("PROPRIETARIO"),
+  vinculo: z.enum(["PROPRIETARIO", "INQUILINO", "DEPENDENTE"]).optional(),
 });
 
 export type CondominioInput = z.infer<typeof condominioSchema>;

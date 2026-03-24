@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import { NewUnidadeDialog } from "@/components/unidades/unidade-dialogs";
 
 const statusLabel: Record<string, string> = {
   OCUPADA: "Ocupada",
@@ -62,8 +63,11 @@ export default async function SindicoUnidadesPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Unidades</h1>
-        <p className="text-sm text-gray-500">{total} unidades</p>
+        <div>
+          <h1 className="text-2xl font-bold">Unidades</h1>
+          <p className="text-sm text-gray-500">{total} unidades</p>
+        </div>
+        <NewUnidadeDialog blocos={blocos} condominioId={tenantId} />
       </div>
 
       {/* Filters */}

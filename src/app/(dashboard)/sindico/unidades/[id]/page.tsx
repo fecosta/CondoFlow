@@ -6,8 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
+import { EditUnidadeDialog, DeleteUnidadeButton } from "@/components/unidades/unidade-dialogs";
+import { VeiculosPets } from "@/components/unidades/veiculos-pets";
 
 const vincLabel: Record<string, string> = { PROPRIETARIO: "Proprietário", INQUILINO: "Inquilino", DEPENDENTE: "Dependente" };
+const petSizeLabel: Record<string, string> = { PEQUENO: "Pequeno", MEDIO: "Médio", GRANDE: "Grande" };
 
 export default async function UnidadeDetailPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -21,6 +24,8 @@ export default async function UnidadeDetailPage({ params }: { params: { id: stri
       bloco: true,
       moradores: { where: { isActive: true } },
       encomendas: { orderBy: { receivedAt: "desc" }, take: 5 },
+      veiculos: true,
+      pets: true,
     },
   });
 
@@ -33,9 +38,19 @@ export default async function UnidadeDetailPage({ params }: { params: { id: stri
           <Link href="/sindico/unidades" className="hover:underline">Unidades</Link>
           {" / "}{unidade.bloco.name} — {unidade.number}
         </p>
-        <h1 className="text-2xl font-bold mt-1">
-          {unidade.bloco.name} — Unidade {unidade.number}
-        </h1>
+        <div className="flex items-center justify-between mt-1">
+          <h1 className="text-2xl font-bold">
+            {unidade.bloco.name} — Unidade {unidade.number}
+          </h1>
+          <div className="flex gap-2">
+            <EditUnidadeDialog
+              unidadeId={unidade.id}
+              currentNumber={unidade.number}
+              currentStatus={unidade.status}
+            />
+            <DeleteUnidadeButton unidadeId={unidade.id} />
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -59,6 +74,12 @@ export default async function UnidadeDetailPage({ params }: { params: { id: stri
           )}
         </CardContent>
       </Card>
+
+      <VeiculosPets
+        unidadeId={unidade.id}
+        veiculos={unidade.veiculos}
+        pets={unidade.pets.map((p) => ({ ...p, sizeLabel: petSizeLabel[p.size] }))}
+      />
 
       <Card>
         <CardHeader><CardTitle>Encomendas Recentes</CardTitle></CardHeader>

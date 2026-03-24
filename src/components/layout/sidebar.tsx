@@ -14,6 +14,11 @@ import {
   User,
   X,
   Settings,
+  ShieldCheck,
+  DoorOpen,
+  CalendarCheck,
+  Sofa,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -28,24 +33,31 @@ const sindicoNav: NavItem[] = [
   { href: "/sindico/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/sindico/unidades", label: "Unidades", icon: Building2 },
   { href: "/sindico/moradores", label: "Moradores", icon: Users },
+  { href: "/sindico/porteiros", label: "Porteiros", icon: DoorOpen },
   { href: "/sindico/comunicados", label: "Comunicados", icon: MessageSquare },
   { href: "/sindico/encomendas", label: "Encomendas", icon: Package },
+  { href: "/sindico/areas-comuns", label: "Áreas Comuns", icon: Sofa },
+  { href: "/sindico/reservas", label: "Reservas", icon: CalendarCheck },
   { href: "/sindico/settings", label: "Configurações", icon: Settings },
 ];
 
 const portariaNav: NavItem[] = [
   { href: "/portaria/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/portaria/encomendas", label: "Encomendas", icon: Package },
+  { href: "/portaria/visitantes", label: "Visitantes", icon: UserCheck },
 ];
 
 const moradorNav: NavItem[] = [
   { href: "/morador/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/morador/comunicados", label: "Comunicados", icon: MessageSquare },
   { href: "/morador/encomendas", label: "Encomendas", icon: Package },
+  { href: "/morador/reservas", label: "Reservas", icon: CalendarCheck },
+  { href: "/morador/visitantes", label: "Visitantes", icon: UserCheck },
 ];
 
 const adminNav: NavItem[] = [
   { href: "/admin/condominios", label: "Condomínios", icon: Building2 },
+  { href: "/admin/sindicos", label: "Síndicos", icon: ShieldCheck },
 ];
 
 interface SidebarProps {

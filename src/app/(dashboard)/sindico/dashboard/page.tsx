@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getTenantId } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Package, MessageSquare, Users } from "lucide-react";
+import { Building2, Package, MessageSquare, Users, CalendarCheck, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
 
@@ -14,25 +14,49 @@ export default async function SindicoDashboard() {
 
   const tenantId = await getTenantId();
 
-  const [totalUnidades, ocupadas, pendingEncomendas, recentComunicados, totalMoradores] =
-    await Promise.all([
-      prisma.unidade.count({ where: { bloco: { condominioId: tenantId } } }),
-      prisma.unidade.count({ where: { bloco: { condominioId: tenantId }, status: "OCUPADA" } }),
-      prisma.encomenda.count({ where: { status: "PENDENTE", unidade: { bloco: { condominioId: tenantId } } } }),
-      prisma.comunicado.findMany({
-        where: { condominioId: tenantId },
-        include: { _count: { select: { reads: true } } },
-        orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-        take: 5,
-      }),
-      prisma.morador.count({ where: { isActive: true, unidade: { bloco: { condominioId: tenantId } } } }),
-    ]);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(todayStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const [
+    totalUnidades, ocupadas, pendingEncomendas, recentComunicados,
+    totalMoradores, pendingReservas, weekReservas, visitantesToday,
+  ] = await Promise.all([
+    prisma.unidade.count({ where: { bloco: { condominioId: tenantId } } }),
+    prisma.unidade.count({ where: { bloco: { condominioId: tenantId }, status: "OCUPADA" } }),
+    prisma.encomenda.count({ where: { status: "PENDENTE", unidade: { bloco: { condominioId: tenantId } } } }),
+    prisma.comunicado.findMany({
+      where: { condominioId: tenantId },
+      include: { _count: { select: { reads: true } } },
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+    prisma.morador.count({ where: { isActive: true, unidade: { bloco: { condominioId: tenantId } } } }),
+    prisma.reserva.count({ where: { areaComum: { condominioId: tenantId }, status: "PENDENTE" } }),
+    prisma.reserva.count({
+      where: {
+        areaComum: { condominioId: tenantId },
+        status: "APROVADA",
+        date: { gte: todayStart, lt: weekEnd },
+      },
+    }),
+    prisma.visitante.count({
+      where: {
+        unidade: { bloco: { condominioId: tenantId } },
+        OR: [
+          { type: "PONTUAL", expectedDate: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) } },
+          { type: "RECORRENTE", startDate: { lte: todayStart }, endDate: { gte: todayStart } },
+        ],
+      },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Painel</h1>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
@@ -77,6 +101,33 @@ export default async function SindicoDashboard() {
           <CardContent>
             <p className="text-2xl font-bold">{recentComunicados.length}</p>
             <p className="text-xs text-gray-500">recentes</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4" /> Reservas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{weekReservas}</p>
+            <p className="text-xs text-gray-500">esta semana</p>
+            {pendingReservas > 0 && (
+              <Badge variant="secondary" className="text-xs mt-1">{pendingReservas} pendentes</Badge>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <UserCheck className="h-4 w-4" /> Visitantes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{visitantesToday}</p>
+            <p className="text-xs text-gray-500">esperados hoje</p>
           </CardContent>
         </Card>
       </div>

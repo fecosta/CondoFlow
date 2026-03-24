@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Search } from "@/components/moradores/search";
 import { NewMoradorDialog } from "@/components/moradores/new-morador-dialog";
+import { EditMoradorDialog, DeleteMoradorButton } from "@/components/moradores/morador-actions";
+import type { MoradorInput } from "@/lib/validations/condominio";
 
 const vincLabel: Record<string, string> = { PROPRIETARIO: "Proprietário", INQUILINO: "Inquilino", DEPENDENTE: "Dependente" };
 
@@ -80,7 +82,21 @@ export default async function SindicoMoradoresPage({
                   </p>
                   {m.email && <p className="text-xs text-gray-400">{m.email}</p>}
                 </div>
-                <Badge variant="outline">{vincLabel[m.vinculo]}</Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline">{vincLabel[m.vinculo]}</Badge>
+                  <EditMoradorDialog
+                    moradorId={m.id}
+                    defaultValues={{
+                      name: m.name,
+                      email: m.email ?? "",
+                      phone: m.phone ?? "",
+                      unidadeId: m.unidadeId,
+                      vinculo: m.vinculo as MoradorInput["vinculo"],
+                    }}
+                    unidades={unidades}
+                  />
+                  <DeleteMoradorButton moradorId={m.id} name={m.name} />
+                </div>
               </CardContent>
             </Card>
           ))}

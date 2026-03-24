@@ -2,13 +2,18 @@ import NextAuth, { type User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { loginSchema } from "@/lib/validations/auth";
+import { z } from "zod";
 
 interface ExtendedUser extends User {
   role: string;
   condominioId: string | null;
   condominioRole: string | null;
 }
+
+const loginSchema = z.object({
+  email: z.string().min(1).email(),
+  password: z.string().min(1),
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -18,6 +23,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     Credentials({
+      credentials: {
+        email: { label: "E-mail", type: "email" },
+        password: { label: "Senha", type: "password" },
+      },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
@@ -28,7 +37,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email },
           include: {
             condominioUsers: {
-              include: { condominio: true },
               take: 1,
             },
           },
@@ -39,7 +47,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const passwordOk = await bcrypt.compare(password, user.passwordHash);
         if (!passwordOk) return null;
 
-        // Update last login
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
