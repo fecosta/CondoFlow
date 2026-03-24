@@ -1,0 +1,490 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & MULTI-TENANCY
+// ============================================
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  passwordHash   String
+  role           Role      @default(MORADOR)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastLoginAt    DateTime?
+
+  resetToken          String?   @unique
+  resetTokenExpiresAt DateTime?
+
+  condominioUsers  CondominioUser[]
+  comunicadoReads  ComunicadoRead[]
+  encomendas       Encomenda[]      @relation("EncomendaRecebidaPor")
+  encomendasRet    Encomenda[]      @relation("EncomendaRetiradaPor")
+  reservas         Reserva[]
+  visitantes       Visitante[]
+  ocorrencias      Ocorrencia[]
+  comentarios      OcorrenciaComentario[]
+  notificacoes     Notificacao[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SINDICO
+  PORTEIRO
+  MORADOR
+}
+
+model Condominio {
+  id          String   @id @default(cuid())
+  name        String
+  cnpj        String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  condominioUsers  CondominioUser[]
+  blocos           Bloco[]
+  comunicados      Comunicado[]
+  areasComuns      AreaComum[]
+
+  @@map("condominios")
+}
+
+model CondominioUser {
+  id            String   @id @default(cuid())
+  userId        String
+  condominioId  String
+  role          Role
+  createdAt     DateTime @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condominio  Condominio @relation(fields: [condominioId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, condominioId])
+  @@map("condominio_users")
+}
+
+// ============================================
+// REGISTRATIONS (PHASE 1)
+// ============================================
+
+model Bloco {
+  id            String   @id @default(cuid())
+  name          String
+  condominioId  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  condominio  Condominio @relation(fields: [condominioId], references: [id], onDelete: Cascade)
+  unidades    Unidade[]
+
+  @@map("blocos")
+}
+
+model Unidade {
+  id               String           @id @default(cuid())
+  number           String
+  blocoId          String
+  status           UnidadeStatus    @default(VAGA)
+  statusFinanceiro FinanceiroStatus @default(EM_DIA)
+  obsFinanceiro    String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  bloco       Bloco        @relation(fields: [blocoId], references: [id], onDelete: Cascade)
+  moradores   Morador[]
+  encomendas  Encomenda[]
+  veiculos    Veiculo[]
+  pets        Pet[]
+  visitantes  Visitante[]
+  reservas    Reserva[]
+  ocorrencias Ocorrencia[]
+
+  @@map("unidades")
+}
+
+enum UnidadeStatus {
+  OCUPADA
+  VAGA
+  BLOQUEADA
+}
+
+enum FinanceiroStatus {
+  EM_DIA
+  PENDENTE
+  INADIMPLENTE
+}
+
+model Morador {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  unidadeId   String
+  vinculo     Vinculo  @default(PROPRIETARIO)
+  userId      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unidade     Unidade  @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@map("moradores")
+}
+
+enum Vinculo {
+  PROPRIETARIO
+  INQUILINO
+  DEPENDENTE
+}
+
+// ============================================
+// COMUNICADOS (PHASE 1)
+// ============================================
+
+model Comunicado {
+  id            String   @id @default(cuid())
+  title         String
+  content       String   @db.Text
+  isPinned      Boolean  @default(false)
+  condominioId  String
+  authorId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  condominio  Condominio       @relation(fields: [condominioId], references: [id], onDelete: Cascade)
+  reads       ComunicadoRead[]
+
+  @@map("comunicados")
+}
+
+model ComunicadoRead {
+  id            String   @id @default(cuid())
+  comunicadoId  String
+  userId        String
+  readAt        DateTime @default(now())
+
+  comunicado  Comunicado @relation(fields: [comunicadoId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([comunicadoId, userId])
+  @@map("comunicado_reads")
+}
+
+// ============================================
+// ENCOMENDAS (PHASE 1)
+// ============================================
+
+model Encomenda {
+  id            String          @id @default(cuid())
+  description   String?
+  unidadeId     String
+  status        EncomendaStatus @default(PENDENTE)
+  receivedById  String
+  receivedAt    DateTime        @default(now())
+  pickedUpById  String?
+  pickedUpName  String?
+  pickedUpAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  unidade     Unidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  receivedBy  User    @relation("EncomendaRecebidaPor", fields: [receivedById], references: [id])
+  pickedUpBy  User?   @relation("EncomendaRetiradaPor", fields: [pickedUpById], references: [id])
+
+  @@map("encomendas")
+}
+
+enum EncomendaStatus {
+  PENDENTE
+  ENTREGUE
+}
+
+// ============================================
+// RESERVAS (PHASE 2)
+// ============================================
+
+model AreaComum {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?  @db.Text
+  capacity         Int?
+  imageUrl         String?
+  condominioId     String
+  isActive         Boolean  @default(true)
+  requiresApproval Boolean  @default(false)
+  minAdvanceDays   Int      @default(1)
+  maxAdvanceDays   Int      @default(30)
+  maxDurationHours Int      @default(4)
+  openTime         String   @default("08:00")
+  closeTime        String   @default("22:00")
+  availableDays    String   @default("0,1,2,3,4,5,6")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  condominio  Condominio       @relation(fields: [condominioId], references: [id], onDelete: Cascade)
+  reservas    Reserva[]
+  bloqueios   AgendaBloqueio[]
+
+  @@map("areas_comuns")
+}
+
+model Reserva {
+  id           String        @id @default(cuid())
+  areaComumId  String
+  unidadeId    String
+  userId       String
+  date         DateTime      @db.Date
+  startTime    String
+  endTime      String
+  status       ReservaStatus @default(PENDENTE)
+  rejectReason String?
+  cancelReason String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  areaComum   AreaComum @relation(fields: [areaComumId], references: [id], onDelete: Cascade)
+  unidade     Unidade   @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("reservas")
+}
+
+enum ReservaStatus {
+  PENDENTE
+  APROVADA
+  REJEITADA
+  CANCELADA
+}
+
+model AgendaBloqueio {
+  id          String   @id @default(cuid())
+  areaComumId String
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  areaComum   AreaComum @relation(fields: [areaComumId], references: [id], onDelete: Cascade)
+
+  @@map("agenda_bloqueios")
+}
+
+// ============================================
+// VISITANTES (PHASE 2)
+// ============================================
+
+model Visitante {
+  id           String     @id @default(cuid())
+  name         String
+  document     String?
+  unidadeId    String
+  userId       String
+  type         VisitaType @default(PONTUAL)
+  expectedDate DateTime?  @db.Date
+  startDate    DateTime?  @db.Date
+  endDate      DateTime?  @db.Date
+  entryAt      DateTime?
+  exitAt       DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  unidade     Unidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id])
+
+  @@map("visitantes")
+}
+
+enum VisitaType {
+  PONTUAL
+  RECORRENTE
+}
+
+// ============================================
+// VEÍCULOS & PETS (PHASE 2)
+// ============================================
+
+model Veiculo {
+  id          String   @id @default(cuid())
+  plate       String
+  model       String?
+  color       String?
+  parkingSpot String?
+  unidadeId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unidade     Unidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@map("veiculos")
+}
+
+model Pet {
+  id        String   @id @default(cuid())
+  name      String
+  breed     String?
+  size      PetSize  @default(MEDIO)
+  unidadeId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  unidade   Unidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@map("pets")
+}
+
+enum PetSize {
+  PEQUENO
+  MEDIO
+  GRANDE
+}
+
+// ============================================
+// OCORRÊNCIAS (PHASE 3)
+// ============================================
+
+model Ocorrencia {
+  id          String             @id @default(cuid())
+  title       String
+  description String             @db.Text
+  category    OcorrenciaCategory @default(OUTROS)
+  priority    OcorrenciaPriority @default(MEDIA)
+  status      OcorrenciaStatus   @default(ABERTA)
+  unidadeId   String
+  userId      String
+  resolution  String?            @db.Text
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  unidade     Unidade                @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  user        User                   @relation(fields: [userId], references: [id])
+  comentarios OcorrenciaComentario[]
+  imagens     OcorrenciaImagem[]
+
+  @@map("ocorrencias")
+}
+
+enum OcorrenciaCategory {
+  MANUTENCAO
+  BARULHO
+  SEGURANCA
+  LIMPEZA
+  AREAS_COMUNS
+  OUTROS
+}
+
+enum OcorrenciaPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum OcorrenciaStatus {
+  ABERTA
+  EM_ANDAMENTO
+  RESOLVIDA
+  FECHADA
+}
+
+model OcorrenciaComentario {
+  id           String   @id @default(cuid())
+  content      String   @db.Text
+  isInternal   Boolean  @default(false)
+  ocorrenciaId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  ocorrencia Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@map("ocorrencia_comentarios")
+}
+
+model OcorrenciaImagem {
+  id           String   @id @default(cuid())
+  url          String
+  ocorrenciaId String
+  createdAt    DateTime @default(now())
+
+  ocorrencia Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+
+  @@map("ocorrencia_imagens")
+}
+
+// ============================================
+// NOTIFICAÇÕES (PHASE 3)
+// ============================================
+
+model Notificacao {
+  id        String          @id @default(cuid())
+  type      NotificacaoType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean         @default(false)
+  userId    String
+  createdAt DateTime        @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notificacoes")
+}
+
+enum NotificacaoType {
+  COMUNICADO
+  ENCOMENDA
+  RESERVA
+  OCORRENCIA
+  VISITANTE
+  SISTEMA
+}
+
+model NotificacaoPreferencia {
+  id     String          @id @default(cuid())
+  userId String
+  type   NotificacaoType
+  email  Boolean         @default(true)
+  digest Boolean         @default(false)
+
+  @@unique([userId, type])
+  @@map("notificacao_preferencias")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?  @db.Text
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
