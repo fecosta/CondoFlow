@@ -19,6 +19,9 @@ import {
   CalendarCheck,
   Sofa,
   UserCheck,
+  AlertCircle,
+  Wallet,
+  BarChart2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -38,6 +41,9 @@ const sindicoNav: NavItem[] = [
   { href: "/sindico/encomendas", label: "Encomendas", icon: Package },
   { href: "/sindico/areas-comuns", label: "Áreas Comuns", icon: Sofa },
   { href: "/sindico/reservas", label: "Reservas", icon: CalendarCheck },
+  { href: "/sindico/ocorrencias", label: "Ocorrências", icon: AlertCircle },
+  { href: "/sindico/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/sindico/metricas", label: "Métricas", icon: BarChart2 },
   { href: "/sindico/settings", label: "Configurações", icon: Settings },
 ];
 
@@ -53,6 +59,7 @@ const moradorNav: NavItem[] = [
   { href: "/morador/encomendas", label: "Encomendas", icon: Package },
   { href: "/morador/reservas", label: "Reservas", icon: CalendarCheck },
   { href: "/morador/visitantes", label: "Visitantes", icon: UserCheck },
+  { href: "/morador/ocorrencias", label: "Ocorrências", icon: AlertCircle },
 ];
 
 const adminNav: NavItem[] = [

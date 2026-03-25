@@ -2,6 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "./notification-bell";
 
 interface HeaderProps {
   title?: string;
@@ -20,6 +21,9 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         <Menu className="h-5 w-5" />
       </Button>
       {title && <h2 className="font-semibold text-gray-800">{title}</h2>}
+      <div className="ml-auto">
+        <NotificationBell />
+      </div>
     </header>
   );
 }
