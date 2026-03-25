@@ -9,12 +9,13 @@ import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
 import { NewEncomendaDialog } from "@/components/encomendas/new-encomenda-dialog";
 import { RetirarButton } from "@/components/encomendas/retirar-button";
+import { SearchInput } from "@/components/ui/search-input";
 import type { Prisma } from "@prisma/client";
 
 export default async function SindicoEncomendasPage({
   searchParams,
 }: {
-  searchParams: { page?: string; status?: string; unidadeId?: string };
+  searchParams: { page?: string; status?: string; unidadeId?: string; blocoId?: string; date?: string; q?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
@@ -22,16 +23,17 @@ export default async function SindicoEncomendasPage({
   const tenantId = await getTenantId();
   const page = Math.max(1, Number(searchParams.page ?? 1));
   const limit = 20;
-  const status = searchParams.status;
-  const unidadeId = searchParams.unidadeId;
+  const { status, unidadeId, blocoId, date, q } = searchParams;
 
   const where: Prisma.EncomendaWhereInput = {
-    unidade: { bloco: { condominioId: tenantId } },
+    unidade: { bloco: { condominioId: tenantId, ...(blocoId ? { id: blocoId } : {}) } },
     ...(status ? { status: status as Prisma.EnumEncomendaStatusFilter } : {}),
     ...(unidadeId ? { unidadeId } : {}),
+    ...(date ? { receivedAt: { gte: new Date(date), lt: new Date(new Date(date).getTime() + 86400000) } } : {}),
+    ...(q ? { OR: [{ description: { contains: q } }, { unidade: { number: { contains: q } } }, { pickedUpName: { contains: q } }] } : {}),
   };
 
-  const [encomendas, total, unidades] = await Promise.all([
+  const [encomendas, total, unidades, blocos] = await Promise.all([
     prisma.encomenda.findMany({
       where,
       include: {
@@ -48,9 +50,17 @@ export default async function SindicoEncomendasPage({
       include: { bloco: true },
       orderBy: [{ bloco: { name: "asc" } }, { number: "asc" }],
     }),
+    prisma.bloco.findMany({ where: { condominioId: tenantId }, orderBy: { name: "asc" } }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
+
+  function buildHref(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    const merged = { status, unidadeId, blocoId, date, q, ...overrides };
+    Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v); });
+    return `/sindico/encomendas${params.toString() ? `?${params}` : ""}`;
+  }
 
   return (
     <div className="space-y-4">
@@ -59,72 +69,81 @@ export default async function SindicoEncomendasPage({
         <NewEncomendaDialog unidades={unidades} />
       </div>
 
+      {/* Search */}
+      <SearchInput placeholder="Buscar por unidade, descrição..." defaultValue={q} />
+
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <Link href="/sindico/encomendas">
-          <Badge
-            variant={!status ? "default" : "outline"}
-            className="cursor-pointer"
-          >
-            Todas
-          </Badge>
+      <div className="flex gap-2 flex-wrap items-center">
+        <span className="text-sm text-gray-500">Status:</span>
+        {[["", "Todas"], ["PENDENTE", "Pendentes"], ["ENTREGUE", "Entregues"]].map(([s, label]) => (
+          <Link key={s || "all"} href={buildHref({ status: s || undefined, page: undefined })}>
+            <Badge variant={status === s || (!status && !s) ? (s === "PENDENTE" ? "destructive" : "default") : "outline"} className="cursor-pointer">
+              {label}
+            </Badge>
+          </Link>
+        ))}
+
+        {blocos.length > 0 && (
+          <>
+            <span className="text-sm text-gray-500 ml-2">Bloco:</span>
+            <Link href={buildHref({ blocoId: undefined, unidadeId: undefined, page: undefined })}>
+              <Badge variant={!blocoId ? "default" : "outline"} className="cursor-pointer">Todos</Badge>
+            </Link>
+            {blocos.map((b) => (
+              <Link key={b.id} href={buildHref({ blocoId: b.id, unidadeId: undefined, page: undefined })}>
+                <Badge variant={blocoId === b.id ? "default" : "outline"} className="cursor-pointer">{b.name}</Badge>
+              </Link>
+            ))}
+          </>
+        )}
+
+        {blocoId && (
+          <>
+            <span className="text-sm text-gray-500 ml-2">Unidade:</span>
+            <Link href={buildHref({ unidadeId: undefined, page: undefined })}>
+              <Badge variant={!unidadeId ? "default" : "outline"} className="cursor-pointer">Todas</Badge>
+            </Link>
+            {unidades.filter((u) => u.blocoId === blocoId).map((u) => (
+              <Link key={u.id} href={buildHref({ unidadeId: u.id, page: undefined })}>
+                <Badge variant={unidadeId === u.id ? "default" : "outline"} className="cursor-pointer">{u.number}</Badge>
+              </Link>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Date filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">Data:</span>
+        <Link href={buildHref({ date: undefined, page: undefined })}>
+          <Badge variant={!date ? "default" : "outline"} className="cursor-pointer">Todas</Badge>
         </Link>
-        <Link href="/sindico/encomendas?status=PENDENTE">
-          <Badge
-            variant={status === "PENDENTE" ? "destructive" : "outline"}
-            className="cursor-pointer"
-          >
-            Pendentes
-          </Badge>
-        </Link>
-        <Link href="/sindico/encomendas?status=ENTREGUE">
-          <Badge
-            variant={status === "ENTREGUE" ? "secondary" : "outline"}
-            className="cursor-pointer"
-          >
-            Entregues
-          </Badge>
-        </Link>
+        <form method="GET" action="/sindico/encomendas" className="flex items-center gap-2">
+          {status && <input type="hidden" name="status" value={status} />}
+          {blocoId && <input type="hidden" name="blocoId" value={blocoId} />}
+          {unidadeId && <input type="hidden" name="unidadeId" value={unidadeId} />}
+          {q && <input type="hidden" name="q" value={q} />}
+          <input type="date" name="date" defaultValue={date ?? ""} className="text-sm border rounded px-2 py-1 h-8" />
+          <Button type="submit" size="sm" variant="outline" className="h-8 text-xs">Filtrar</Button>
+        </form>
       </div>
 
       {encomendas.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-gray-500">
-            Nenhuma encomenda encontrada.
-          </CardContent>
-        </Card>
+        <Card><CardContent className="py-12 text-center text-gray-500">Nenhuma encomenda encontrada.</CardContent></Card>
       ) : (
         <div className="space-y-2">
           {encomendas.map((e) => (
-            <Card
-              key={e.id}
-              className={e.status === "PENDENTE" ? "border-red-200" : ""}
-            >
+            <Card key={e.id} className={e.status === "PENDENTE" ? "border-red-200" : ""}>
               <CardContent className="pt-4 flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-sm">
-                    {e.unidade.bloco.name} — Unidade {e.unidade.number}
-                  </p>
-                  {e.description && (
-                    <p className="text-xs text-gray-500 mt-1">{e.description}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    Recebida por {e.receivedBy.name} em{" "}
-                    {formatDateTime(e.receivedAt)}
-                  </p>
-                  {e.pickedUpName && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Retirado por {e.pickedUpName} em{" "}
-                      {formatDateTime(e.pickedUpAt!)}
-                    </p>
-                  )}
+                  <p className="font-medium text-sm">{e.unidade.bloco.name} — Unidade {e.unidade.number}</p>
+                  {e.description && <p className="text-xs text-gray-500 mt-1">{e.description}</p>}
+                  <p className="text-xs text-gray-400 mt-1">Recebida por {e.receivedBy.name} em {formatDateTime(e.receivedAt)}</p>
+                  {e.pickedUpName && <p className="text-xs text-green-600 mt-1">Retirado por {e.pickedUpName} em {formatDateTime(e.pickedUpAt!)}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   {e.status === "PENDENTE" ? (
-                    <>
-                      <Badge variant="destructive">Pendente</Badge>
-                      <RetirarButton encomendaId={e.id} />
-                    </>
+                    <><Badge variant="destructive">Pendente</Badge><RetirarButton encomendaId={e.id} /></>
                   ) : (
                     <Badge variant="secondary">Entregue</Badge>
                   )}
@@ -137,27 +156,9 @@ export default async function SindicoEncomendasPage({
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2">
-          {page > 1 && (
-            <Button variant="outline" asChild>
-              <Link
-                href={`?page=${page - 1}${status ? `&status=${status}` : ""}`}
-              >
-                Anterior
-              </Link>
-            </Button>
-          )}
-          <span className="flex items-center text-sm text-gray-500">
-            Página {page} de {totalPages}
-          </span>
-          {page < totalPages && (
-            <Button variant="outline" asChild>
-              <Link
-                href={`?page=${page + 1}${status ? `&status=${status}` : ""}`}
-              >
-                Próxima
-              </Link>
-            </Button>
-          )}
+          {page > 1 && <Button variant="outline" asChild><Link href={buildHref({ page: String(page - 1) })}>Anterior</Link></Button>}
+          <span className="flex items-center text-sm text-gray-500">Página {page} de {totalPages}</span>
+          {page < totalPages && <Button variant="outline" asChild><Link href={buildHref({ page: String(page + 1) })}>Próxima</Link></Button>}
         </div>
       )}
     </div>

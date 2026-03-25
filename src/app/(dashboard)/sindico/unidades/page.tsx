@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { NewUnidadeDialog } from "@/components/unidades/unidade-dialogs";
+import { SearchInput } from "@/components/ui/search-input";
 
 const statusLabel: Record<string, string> = {
   OCUPADA: "Ocupada",
@@ -24,7 +25,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 export default async function SindicoUnidadesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; status?: string; blocoId?: string };
+  searchParams: { page?: string; status?: string; blocoId?: string; q?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
@@ -34,10 +35,17 @@ export default async function SindicoUnidadesPage({
   const limit = 20;
   const status = searchParams.status;
   const blocoId = searchParams.blocoId;
+  const q = searchParams.q?.trim();
 
   const where: Prisma.UnidadeWhereInput = {
     bloco: { condominioId: tenantId, ...(blocoId ? { id: blocoId } : {}) },
     ...(status ? { status: status as Prisma.EnumUnidadeStatusFilter } : {}),
+    ...(q ? {
+      OR: [
+        { number: { contains: q } },
+        { moradores: { some: { name: { contains: q }, isActive: true } } },
+      ],
+    } : {}),
   };
 
   const [unidades, total, blocos] = await Promise.all([
@@ -69,6 +77,9 @@ export default async function SindicoUnidadesPage({
         </div>
         <NewUnidadeDialog blocos={blocos} condominioId={tenantId} />
       </div>
+
+      {/* Search */}
+      <SearchInput placeholder="Buscar por número ou morador..." defaultValue={q} />
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap items-center">

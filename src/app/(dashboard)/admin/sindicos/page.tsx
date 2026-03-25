@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NewSindicoDialog } from "@/components/sindicos/new-sindico-dialog";
+import { EditSindicoDialog } from "@/components/sindicos/edit-sindico-dialog";
 import { RemoveSindicoButton } from "@/components/sindicos/remove-sindico-button";
 
 export default async function AdminSindicosPage() {
@@ -56,6 +57,7 @@ export default async function AdminSindicosPage() {
                   <Badge variant={a.user.isActive ? "default" : "secondary"}>
                     {a.user.isActive ? "Ativo" : "Inativo"}
                   </Badge>
+                  <EditSindicoDialog assignmentId={a.id} currentName={a.user.name} currentEmail={a.user.email} />
                   <RemoveSindicoButton assignmentId={a.id} name={a.user.name} />
                 </div>
               </CardContent>
