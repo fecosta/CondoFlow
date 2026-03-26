@@ -20,8 +20,8 @@ import {
   Sofa,
   UserCheck,
   AlertCircle,
+  Wallet,
   BarChart2,
-  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -34,7 +34,6 @@ interface NavItem {
 
 const sindicoNav: NavItem[] = [
   { href: "/sindico/dashboard", label: "Painel", icon: LayoutDashboard },
-  { href: "/sindico/blocos", label: "Blocos / Torres", icon: Layers },
   { href: "/sindico/unidades", label: "Unidades", icon: Building2 },
   { href: "/sindico/moradores", label: "Moradores", icon: Users },
   { href: "/sindico/porteiros", label: "Porteiros", icon: DoorOpen },
@@ -43,6 +42,7 @@ const sindicoNav: NavItem[] = [
   { href: "/sindico/areas-comuns", label: "Áreas Comuns", icon: Sofa },
   { href: "/sindico/reservas", label: "Reservas", icon: CalendarCheck },
   { href: "/sindico/ocorrencias", label: "Ocorrências", icon: AlertCircle },
+  { href: "/sindico/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/sindico/metricas", label: "Métricas", icon: BarChart2 },
   { href: "/sindico/settings", label: "Configurações", icon: Settings },
 ];
@@ -51,7 +51,6 @@ const portariaNav: NavItem[] = [
   { href: "/portaria/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/portaria/encomendas", label: "Encomendas", icon: Package },
   { href: "/portaria/visitantes", label: "Visitantes", icon: UserCheck },
-  { href: "/portaria/moradores", label: "Moradores", icon: Users },
 ];
 
 const moradorNav: NavItem[] = [

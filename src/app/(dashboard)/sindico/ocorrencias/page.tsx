@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/ui/search-input";
 import { formatDateTime } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -47,27 +46,21 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default async function SindicoOcorrenciasPage({
   searchParams,
 }: {
-  searchParams: { status?: string; category?: string; priority?: string; blocoId?: string; unidadeId?: string; q?: string };
+  searchParams: { status?: string; category?: string; priority?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
 
   const tenantId = await getTenantId();
-  const { status, category, priority, blocoId, unidadeId, q } = searchParams;
 
   const where: Record<string, unknown> = {
-    unidade: {
-      bloco: { condominioId: tenantId },
-      ...(blocoId ? { blocoId } : {}),
-      ...(unidadeId ? { id: unidadeId } : {}),
-    },
-    ...(status ? { status } : {}),
-    ...(category ? { category } : {}),
-    ...(priority ? { priority } : {}),
-    ...(q ? { OR: [{ title: { contains: q } }, { description: { contains: q } }, { user: { name: { contains: q } } }] } : {}),
+    unidade: { bloco: { condominioId: tenantId } },
+    ...(searchParams.status ? { status: searchParams.status } : {}),
+    ...(searchParams.category ? { category: searchParams.category } : {}),
+    ...(searchParams.priority ? { priority: searchParams.priority } : {}),
   };
 
-  const [ocorrencias, counts, blocos, unidades] = await Promise.all([
+  const [ocorrencias, counts] = await Promise.all([
     prisma.ocorrencia.findMany({
       where,
       include: {
@@ -83,22 +76,9 @@ export default async function SindicoOcorrenciasPage({
       where: { unidade: { bloco: { condominioId: tenantId } } },
       _count: { status: true },
     }),
-    prisma.bloco.findMany({ where: { condominioId: tenantId }, orderBy: { name: "asc" } }),
-    prisma.unidade.findMany({
-      where: { bloco: { condominioId: tenantId }, ...(blocoId ? { blocoId } : {}) },
-      include: { bloco: true },
-      orderBy: [{ bloco: { name: "asc" } }, { number: "asc" }],
-    }),
   ]);
 
   const statusCounts = Object.fromEntries(counts.map((c) => [c.status, c._count.status]));
-
-  function buildHref(overrides: Record<string, string | undefined>) {
-    const params = new URLSearchParams();
-    const merged = { status, category, priority, blocoId, unidadeId, q, ...overrides };
-    Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v); });
-    return `/sindico/ocorrencias${params.toString() ? `?${params}` : ""}`;
-  }
 
   return (
     <div className="space-y-6">
@@ -115,62 +95,46 @@ export default async function SindicoOcorrenciasPage({
           { key: "RESOLVIDA", label: "Resolvidas", color: "bg-green-50 border-green-200 text-green-700" },
           { key: "FECHADA", label: "Fechadas", color: "bg-gray-50 border-gray-200 text-gray-700" },
         ].map(({ key, label, color }) => (
-          <Link key={key} href={buildHref({ status: key, category: undefined, priority: undefined })} className={`border rounded-lg p-3 text-center hover:opacity-80 transition-opacity ${color}`}>
+          <Link
+            key={key}
+            href={`/sindico/ocorrencias?status=${key}`}
+            className={`border rounded-lg p-3 text-center hover:opacity-80 transition-opacity ${color}`}
+          >
             <div className="text-2xl font-bold">{statusCounts[key] ?? 0}</div>
             <div className="text-sm">{label}</div>
           </Link>
         ))}
       </div>
 
-      {/* Search */}
-      <SearchInput placeholder="Buscar por título, descrição ou morador..." defaultValue={q} />
-
-      {/* Category filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-sm text-gray-500">Categoria:</span>
-        <Link href={buildHref({ category: undefined })} className={`px-3 py-1 rounded-full text-sm border ${!category ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}>Todas</Link>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <Link href="/sindico/ocorrencias" className={`px-3 py-1 rounded-full text-sm border ${!searchParams.status && !searchParams.category ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+          Todos
+        </Link>
         {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-          <Link key={value} href={buildHref({ category: value })} className={`px-3 py-1 rounded-full text-sm border ${category === value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+          <Link
+            key={value}
+            href={`/sindico/ocorrencias?category=${value}`}
+            className={`px-3 py-1 rounded-full text-sm border ${searchParams.category === value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+          >
             {label}
           </Link>
         ))}
       </div>
 
-      {/* Bloco + Unidade filters */}
-      {blocos.length > 0 && (
-        <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-sm text-gray-500">Bloco:</span>
-          <Link href={buildHref({ blocoId: undefined, unidadeId: undefined })}>
-            <Badge variant={!blocoId ? "default" : "outline"} className="cursor-pointer">Todos</Badge>
-          </Link>
-          {blocos.map((b) => (
-            <Link key={b.id} href={buildHref({ blocoId: b.id, unidadeId: undefined })}>
-              <Badge variant={blocoId === b.id ? "default" : "outline"} className="cursor-pointer">{b.name}</Badge>
-            </Link>
-          ))}
-          {blocoId && (
-            <>
-              <span className="text-sm text-gray-500 ml-2">Unidade:</span>
-              <Link href={buildHref({ unidadeId: undefined })}>
-                <Badge variant={!unidadeId ? "default" : "outline"} className="cursor-pointer">Todas</Badge>
-              </Link>
-              {unidades.map((u) => (
-                <Link key={u.id} href={buildHref({ unidadeId: u.id })}>
-                  <Badge variant={unidadeId === u.id ? "default" : "outline"} className="cursor-pointer">{u.number}</Badge>
-                </Link>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-
       {/* List */}
       {ocorrencias.length === 0 ? (
-        <div className="text-center py-12 text-gray-500"><p>Nenhuma ocorrência encontrada.</p></div>
+        <div className="text-center py-12 text-gray-500">
+          <p>Nenhuma ocorrência encontrada.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {ocorrencias.map((o) => (
-            <Link key={o.id} href={`/sindico/ocorrencias/${o.id}`} className="block bg-white border rounded-lg p-4 hover:border-gray-400 transition-colors">
+            <Link
+              key={o.id}
+              href={`/sindico/ocorrencias/${o.id}`}
+              className="block bg-white border rounded-lg p-4 hover:border-gray-400 transition-colors"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -187,7 +151,12 @@ export default async function SindicoOcorrenciasPage({
                     <span>{o.user.name}</span>
                     <span>·</span>
                     <span>{formatDateTime(o.createdAt)}</span>
-                    {o._count.comentarios > 0 && <><span>·</span><span>{o._count.comentarios} comentário{o._count.comentarios !== 1 ? "s" : ""}</span></>}
+                    {o._count.comentarios > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>{o._count.comentarios} comentário{o._count.comentarios !== 1 ? "s" : ""}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
