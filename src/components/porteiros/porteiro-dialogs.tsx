@@ -9,14 +9,37 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UserPlus, Pencil, Trash2 } from "lucide-react";
+
+const TURNOS = [
+  { value: "MANHA", label: "Manhã" },
+  { value: "TARDE", label: "Tarde" },
+  { value: "NOITE", label: "Noite" },
+  { value: "INTEGRAL", label: "Integral" },
+  { value: "12x36", label: "12x36" },
+] as const;
 
 // --- New Porteiro ---
 const createSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  phone: z.string().optional(),
+  turno: z.enum(["MANHA", "TARDE", "NOITE", "INTEGRAL", "12x36"]).optional(),
 });
 type CreateData = z.infer<typeof createSchema>;
 
@@ -25,7 +48,13 @@ export function NewPorteiroDialog() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateData>({
     resolver: zodResolver(createSchema),
   });
 
@@ -76,11 +105,32 @@ export function NewPorteiroDialog() {
             <Input id="password" type="password" {...register("password")} />
             {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="phone">Telefone</Label>
+            <Input id="phone" type="tel" placeholder="(11) 99999-9999" {...register("phone")} />
+          </div>
+          <div className="space-y-1">
+            <Label>Turno</Label>
+            <Select onValueChange={(v) => setValue("turno", v as CreateData["turno"])}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar turno" />
+              </SelectTrigger>
+              <SelectContent>
+                {TURNOS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? "Salvando..." : "Cadastrar"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -91,17 +141,38 @@ export function NewPorteiroDialog() {
 // --- Edit Porteiro ---
 const editSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  phone: z.string().optional(),
+  turno: z.enum(["MANHA", "TARDE", "NOITE", "INTEGRAL", "12x36"]).optional(),
 });
 type EditData = z.infer<typeof editSchema>;
 
-export function EditPorteiroDialog({ assignmentId, currentName }: { assignmentId: string; currentName: string }) {
+export function EditPorteiroDialog({
+  assignmentId,
+  currentName,
+  currentPhone,
+  currentTurno,
+}: {
+  assignmentId: string;
+  currentName: string;
+  currentPhone?: string | null;
+  currentTurno?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<EditData>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<EditData>({
     resolver: zodResolver(editSchema),
-    defaultValues: { name: currentName },
+    defaultValues: {
+      name: currentName,
+      phone: currentPhone ?? "",
+      turno: (currentTurno as EditData["turno"]) ?? undefined,
+    },
   });
 
   async function onSubmit(data: EditData) {
@@ -140,11 +211,35 @@ export function EditPorteiroDialog({ assignmentId, currentName }: { assignmentId
             <Input id="edit-name" {...register("name")} />
             {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="edit-phone">Telefone</Label>
+            <Input id="edit-phone" type="tel" placeholder="(11) 99999-9999" {...register("phone")} />
+          </div>
+          <div className="space-y-1">
+            <Label>Turno</Label>
+            <Select
+              defaultValue={currentTurno ?? undefined}
+              onValueChange={(v) => setValue("turno", v as EditData["turno"])}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar turno" />
+              </SelectTrigger>
+              <SelectContent>
+                {TURNOS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? "Salvando..." : "Salvar"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
           </div>
         </form>
       </DialogContent>

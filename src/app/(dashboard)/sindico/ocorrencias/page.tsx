@@ -4,7 +4,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
+import { SearchInput } from "@/components/ui/search-input";
 import { formatDateTime } from "@/lib/utils";
+import { Suspense } from "react";
 
 const STATUS_LABELS: Record<string, string> = {
   ABERTA: "Aberta",
@@ -46,21 +48,45 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default async function SindicoOcorrenciasPage({
   searchParams,
 }: {
-  searchParams: { status?: string; category?: string; priority?: string };
+  searchParams: { status?: string; category?: string; priority?: string; blocoId?: string; unidadeId?: string; q?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
 
   const tenantId = await getTenantId();
+  const { status, category, priority, blocoId, unidadeId } = searchParams;
+  const q = searchParams.q?.trim();
+
+  function buildHref(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    const merged = { status, category, priority, blocoId, unidadeId, q, ...overrides };
+    Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v); });
+    const s = params.toString();
+    return `/sindico/ocorrencias${s ? `?${s}` : ""}`;
+  }
 
   const where: Record<string, unknown> = {
-    unidade: { bloco: { condominioId: tenantId } },
-    ...(searchParams.status ? { status: searchParams.status } : {}),
-    ...(searchParams.category ? { category: searchParams.category } : {}),
-    ...(searchParams.priority ? { priority: searchParams.priority } : {}),
+    unidade: {
+      bloco: { condominioId: tenantId, ...(blocoId ? { id: blocoId } : {}) },
+      ...(unidadeId ? { id: unidadeId } : {}),
+    },
+    ...(status ? { status } : {}),
+    ...(category ? { category } : {}),
+    ...(priority ? { priority } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q } },
+            { description: { contains: q } },
+            { unidade: { number: { contains: q } } },
+            { unidade: { bloco: { name: { contains: q } } } },
+            { user: { name: { contains: q } } },
+          ],
+        }
+      : {}),
   };
 
-  const [ocorrencias, counts] = await Promise.all([
+  const [ocorrencias, counts, blocos, unidades] = await Promise.all([
     prisma.ocorrencia.findMany({
       where,
       include: {
@@ -75,6 +101,12 @@ export default async function SindicoOcorrenciasPage({
       by: ["status"],
       where: { unidade: { bloco: { condominioId: tenantId } } },
       _count: { status: true },
+    }),
+    prisma.bloco.findMany({ where: { condominioId: tenantId }, orderBy: { name: "asc" } }),
+    prisma.unidade.findMany({
+      where: { bloco: { condominioId: tenantId, ...(blocoId ? { id: blocoId } : {}) } },
+      include: { bloco: true },
+      orderBy: [{ bloco: { name: "asc" } }, { number: "asc" }],
     }),
   ]);
 
@@ -97,7 +129,7 @@ export default async function SindicoOcorrenciasPage({
         ].map(({ key, label, color }) => (
           <Link
             key={key}
-            href={`/sindico/ocorrencias?status=${key}`}
+            href={buildHref({ status: key })}
             className={`border rounded-lg p-3 text-center hover:opacity-80 transition-opacity ${color}`}
           >
             <div className="text-2xl font-bold">{statusCounts[key] ?? 0}</div>
@@ -106,21 +138,57 @@ export default async function SindicoOcorrenciasPage({
         ))}
       </div>
 
+      <Suspense>
+        <SearchInput placeholder="Buscar por título, unidade, morador..." defaultValue={q} />
+      </Suspense>
+
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <Link href="/sindico/ocorrencias" className={`px-3 py-1 rounded-full text-sm border ${!searchParams.status && !searchParams.category ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+      <div className="flex flex-wrap gap-2 items-center">
+        <Link
+          href="/sindico/ocorrencias"
+          className={`px-3 py-1 rounded-full text-sm border ${!status && !category ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+        >
           Todos
         </Link>
         {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
           <Link
             key={value}
-            href={`/sindico/ocorrencias?category=${value}`}
-            className={`px-3 py-1 rounded-full text-sm border ${searchParams.category === value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            href={buildHref({ category: value })}
+            className={`px-3 py-1 rounded-full text-sm border ${category === value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 hover:bg-gray-50"}`}
           >
             {label}
           </Link>
         ))}
       </div>
+
+      {/* Bloco / Unidade filters */}
+      {blocos.length > 1 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-gray-500">Bloco:</span>
+          <Link href={buildHref({ blocoId: undefined, unidadeId: undefined })}>
+            <Badge variant={!blocoId ? "default" : "outline"} className="cursor-pointer">Todos</Badge>
+          </Link>
+          {blocos.map((b) => (
+            <Link key={b.id} href={buildHref({ blocoId: b.id, unidadeId: undefined })}>
+              <Badge variant={blocoId === b.id ? "default" : "outline"} className="cursor-pointer">{b.name}</Badge>
+            </Link>
+          ))}
+
+          {blocoId && unidades.length > 0 && (
+            <>
+              <span className="text-sm text-gray-500 ml-2">Unidade:</span>
+              <Link href={buildHref({ unidadeId: undefined })}>
+                <Badge variant={!unidadeId ? "default" : "outline"} className="cursor-pointer">Todas</Badge>
+              </Link>
+              {unidades.map((u) => (
+                <Link key={u.id} href={buildHref({ unidadeId: u.id })}>
+                  <Badge variant={unidadeId === u.id ? "default" : "outline"} className="cursor-pointer">{u.number}</Badge>
+                </Link>
+              ))}
+            </>
+          )}
+        </div>
+      )}
 
       {/* List */}
       {ocorrencias.length === 0 ? (

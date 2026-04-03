@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ReservaActions } from "@/components/reservas/reserva-actions";
+import { SearchInput } from "@/components/ui/search-input";
 import { formatDate } from "@/lib/utils";
+import { Suspense } from "react";
 import type { Prisma } from "@prisma/client";
 
 const statusLabel: Record<string, string> = {
@@ -26,7 +28,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 export default async function SindicoReservasPage({
   searchParams,
 }: {
-  searchParams: { page?: string; status?: string };
+  searchParams: { page?: string; status?: string; blocoId?: string; unidadeId?: string; q?: string };
 }) {
   const session = await auth();
   if (!session || !["SUPER_ADMIN", "SINDICO"].includes(session.user.role)) redirect("/login");
@@ -35,13 +37,37 @@ export default async function SindicoReservasPage({
   const page = Math.max(1, Number(searchParams.page ?? 1));
   const limit = 20;
   const status = searchParams.status;
+  const blocoId = searchParams.blocoId;
+  const unidadeId = searchParams.unidadeId;
+  const q = searchParams.q?.trim();
+
+  function buildHref(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    const merged = { status, blocoId, unidadeId, q, ...overrides };
+    Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v); });
+    params.delete("page");
+    const s = params.toString();
+    return `/sindico/reservas${s ? `?${s}` : ""}`;
+  }
 
   const where: Prisma.ReservaWhereInput = {
     areaComum: { condominioId: tenantId },
     ...(status ? { status: status as Prisma.EnumReservaStatusFilter } : {}),
+    ...(unidadeId ? { unidadeId } : {}),
+    ...(blocoId && !unidadeId ? { unidade: { blocoId } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { areaComum: { name: { contains: q } } },
+            { unidade: { number: { contains: q } } },
+            { unidade: { bloco: { name: { contains: q } } } },
+            { user: { name: { contains: q } } },
+          ],
+        }
+      : {}),
   };
 
-  const [reservas, total] = await Promise.all([
+  const [reservas, total, blocos, unidades] = await Promise.all([
     prisma.reserva.findMany({
       where,
       include: {
@@ -54,22 +80,68 @@ export default async function SindicoReservasPage({
       take: limit,
     }),
     prisma.reserva.count({ where }),
+    prisma.bloco.findMany({ where: { condominioId: tenantId }, orderBy: { name: "asc" } }),
+    prisma.unidade.findMany({
+      where: { bloco: { condominioId: tenantId, ...(blocoId ? { id: blocoId } : {}) } },
+      include: { bloco: true },
+      orderBy: [{ bloco: { name: "asc" } }, { number: "asc" }],
+    }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Reservas</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Reservas</h1>
+        <p className="text-sm text-gray-500">{total} reserva(s)</p>
+      </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <Suspense>
+        <SearchInput placeholder="Buscar por área, unidade, morador..." defaultValue={q} />
+      </Suspense>
+
+      {/* Status filters */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <span className="text-sm text-gray-500">Status:</span>
         {["", "PENDENTE", "APROVADA", "REJEITADA", "CANCELADA"].map((s) => (
-          <Link key={s || "all"} href={s ? `?status=${s}` : "/sindico/reservas"}>
-            <Badge variant={status === s || (!status && !s) ? "default" : "outline"} className="cursor-pointer">
+          <Link key={s || "all"} href={buildHref({ status: s || undefined })}>
+            <Badge
+              variant={status === s || (!status && !s) ? "default" : "outline"}
+              className="cursor-pointer"
+            >
               {s ? statusLabel[s] : "Todas"}
             </Badge>
           </Link>
         ))}
+
+        {blocos.length > 1 && (
+          <>
+            <span className="text-sm text-gray-500 ml-2">Bloco:</span>
+            <Link href={buildHref({ blocoId: undefined, unidadeId: undefined })}>
+              <Badge variant={!blocoId ? "default" : "outline"} className="cursor-pointer">Todos</Badge>
+            </Link>
+            {blocos.map((b) => (
+              <Link key={b.id} href={buildHref({ blocoId: b.id, unidadeId: undefined })}>
+                <Badge variant={blocoId === b.id ? "default" : "outline"} className="cursor-pointer">{b.name}</Badge>
+              </Link>
+            ))}
+          </>
+        )}
+
+        {blocoId && unidades.length > 0 && (
+          <>
+            <span className="text-sm text-gray-500 ml-2">Unidade:</span>
+            <Link href={buildHref({ unidadeId: undefined })}>
+              <Badge variant={!unidadeId ? "default" : "outline"} className="cursor-pointer">Todas</Badge>
+            </Link>
+            {unidades.map((u) => (
+              <Link key={u.id} href={buildHref({ unidadeId: u.id })}>
+                <Badge variant={unidadeId === u.id ? "default" : "outline"} className="cursor-pointer">{u.number}</Badge>
+              </Link>
+            ))}
+          </>
+        )}
       </div>
 
       {reservas.length === 0 ? (
@@ -107,13 +179,13 @@ export default async function SindicoReservasPage({
         <div className="flex justify-center gap-2">
           {page > 1 && (
             <Button variant="outline" asChild>
-              <Link href={`?page=${page - 1}${status ? `&status=${status}` : ""}`}>Anterior</Link>
+              <Link href={buildHref({ page: String(page - 1) })}>Anterior</Link>
             </Button>
           )}
           <span className="flex items-center text-sm text-gray-500">Página {page} de {totalPages}</span>
           {page < totalPages && (
             <Button variant="outline" asChild>
-              <Link href={`?page=${page + 1}${status ? `&status=${status}` : ""}`}>Próxima</Link>
+              <Link href={buildHref({ page: String(page + 1) })}>Próxima</Link>
             </Button>
           )}
         </div>

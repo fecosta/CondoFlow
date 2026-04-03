@@ -6,6 +6,8 @@ import { z } from "zod";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
+  phone: z.string().optional(),
+  turno: z.enum(["MANHA", "TARDE", "NOITE", "INTEGRAL", "12x36"]).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -26,8 +28,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
 
-  if (parsed.data.name) {
-    await prisma.user.update({ where: { id: assignment.userId }, data: { name: parsed.data.name } });
+  const updateData: { name?: string; phone?: string; turno?: string } = {};
+  if (parsed.data.name) updateData.name = parsed.data.name;
+  if (parsed.data.phone !== undefined) updateData.phone = parsed.data.phone;
+  if (parsed.data.turno !== undefined) updateData.turno = parsed.data.turno;
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.user.update({ where: { id: assignment.userId }, data: updateData });
   }
 
   return NextResponse.json({ ok: true });

@@ -4,7 +4,19 @@ import { redirect } from "next/navigation";
 import { getTenantId } from "@/lib/tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { NewPorteiroDialog, EditPorteiroDialog, DeletePorteiroButton } from "@/components/porteiros/porteiro-dialogs";
+import {
+  NewPorteiroDialog,
+  EditPorteiroDialog,
+  DeletePorteiroButton,
+} from "@/components/porteiros/porteiro-dialogs";
+
+const turnoLabel: Record<string, string> = {
+  MANHA: "Manhã",
+  TARDE: "Tarde",
+  NOITE: "Noite",
+  INTEGRAL: "Integral",
+  "12x36": "12x36",
+};
 
 export default async function SindicoPorteirosPage() {
   const session = await auth();
@@ -15,7 +27,7 @@ export default async function SindicoPorteirosPage() {
   const porteiros = await prisma.condominioUser.findMany({
     where: { condominioId: tenantId, role: "PORTEIRO" },
     include: {
-      user: { select: { id: true, name: true, email: true, isActive: true } },
+      user: { select: { id: true, name: true, email: true, phone: true, turno: true, isActive: true } },
     },
     orderBy: { user: { name: "asc" } },
   });
@@ -44,12 +56,24 @@ export default async function SindicoPorteirosPage() {
                 <div>
                   <p className="font-medium text-sm">{p.user.name}</p>
                   <p className="text-xs text-gray-500">{p.user.email}</p>
+                  {(p.user.phone || p.user.turno) && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {[p.user.phone, p.user.turno ? turnoLabel[p.user.turno] : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <Badge variant={p.user.isActive ? "default" : "secondary"}>
                     {p.user.isActive ? "Ativo" : "Inativo"}
                   </Badge>
-                  <EditPorteiroDialog assignmentId={p.id} currentName={p.user.name} />
+                  <EditPorteiroDialog
+                    assignmentId={p.id}
+                    currentName={p.user.name}
+                    currentPhone={p.user.phone}
+                    currentTurno={p.user.turno}
+                  />
                   <DeletePorteiroButton assignmentId={p.id} name={p.user.name} />
                 </div>
               </CardContent>

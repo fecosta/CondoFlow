@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NewSindicoDialog } from "@/components/sindicos/new-sindico-dialog";
 import { RemoveSindicoButton } from "@/components/sindicos/remove-sindico-button";
+import { EditSindicoDialog } from "@/components/sindicos/edit-sindico-dialog";
 
 export default async function AdminSindicosPage() {
   const session = await auth();
@@ -52,10 +53,15 @@ export default async function AdminSindicosPage() {
                   <p className="text-xs text-gray-500">{a.user.email}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{a.condominio.name}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Badge variant={a.user.isActive ? "default" : "secondary"}>
                     {a.user.isActive ? "Ativo" : "Inativo"}
                   </Badge>
+                  <EditSindicoDialog
+                    assignmentId={a.id}
+                    currentName={a.user.name}
+                    currentEmail={a.user.email}
+                  />
                   <RemoveSindicoButton assignmentId={a.id} name={a.user.name} />
                 </div>
               </CardContent>
