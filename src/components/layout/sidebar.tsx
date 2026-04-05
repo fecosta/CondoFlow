@@ -90,9 +90,20 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
   return (
     <div className="flex flex-col h-full bg-white border-r">
       <div className="flex items-center justify-between p-4 border-b">
-        <div>
-          <h1 className="font-bold text-lg">GCR</h1>
-          <p className="text-xs text-gray-500">Gestão de Condomínios</p>
+        <div className="flex items-center gap-2.5">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="16" height="16" rx="4" fill="#1F6FEB" opacity="0.9" />
+            <rect x="22" y="2" width="16" height="16" rx="4" fill="#1F6FEB" opacity="0.5" />
+            <rect x="2" y="22" width="16" height="16" rx="4" fill="#1F6FEB" opacity="0.5" />
+            <rect x="22" y="22" width="16" height="16" rx="4" fill="#1F6FEB" opacity="0.25" />
+            <path d="M18 10L22 10" stroke="#1F6FEB" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+            <path d="M10 18L10 22" stroke="#1F6FEB" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+            <path d="M30 18L30 22" stroke="#1F6FEB" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+            <path d="M18 30L22 30" stroke="#1F6FEB" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+          </svg>
+          <span className="text-[18px] font-extrabold tracking-tight text-slate-900 leading-none">
+            Condo<span className="text-[#1F6FEB]">Flow</span>
+          </span>
         </div>
         {onClose && (
           <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
@@ -113,8 +124,8 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                 active
-                  ? "bg-gray-100 text-gray-900 font-medium"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-[#EFF6FF] text-[#1F6FEB] font-semibold"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -129,14 +140,14 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
         <Link
           href="/profile"
           onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
         >
           <User className="h-4 w-4" />
           Meu Perfil
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
         >
           <LogOut className="h-4 w-4" />
           Sair
@@ -144,7 +155,7 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
       </div>
 
       <div className="p-4 border-t">
-        <p className="text-xs text-gray-500 truncate">{userName}</p>
+        <p className="text-xs text-slate-500 truncate">{userName}</p>
       </div>
     </div>
   );
