@@ -11,6 +11,7 @@ import { NewEncomendaDialog } from "@/components/encomendas/new-encomenda-dialog
 import { RetirarButton } from "@/components/encomendas/retirar-button";
 import { SearchInput } from "@/components/ui/search-input";
 import { Suspense } from "react";
+import { Camera } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 
 export default async function PortariaEncomendasPage({
@@ -85,7 +86,14 @@ export default async function PortariaEncomendasPage({
           <h1 className="text-2xl font-bold">Encomendas</h1>
           <p className="text-sm text-gray-500">{total} encomenda(s)</p>
         </div>
-        <NewEncomendaDialog unidades={unidades} />
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/portaria/encomendas/nova">
+              <Camera className="h-4 w-4 mr-2" /> Escanear Etiqueta
+            </Link>
+          </Button>
+          <NewEncomendaDialog unidades={unidades} />
+        </div>
       </div>
 
       <Suspense>
@@ -180,6 +188,12 @@ export default async function PortariaEncomendasPage({
                   {e.description && (
                     <p className="text-xs text-gray-500 mt-1">{e.description}</p>
                   )}
+                  {e.remetente && (
+                    <p className="text-xs text-gray-500 mt-0.5">De: {e.remetente}</p>
+                  )}
+                  {e.codigoRastreio && (
+                    <p className="text-xs text-gray-400 mt-0.5 font-mono">{e.codigoRastreio}</p>
+                  )}
                   <p className="text-xs text-gray-400 mt-1">
                     Recebida por {e.receivedBy.name} em {formatDateTime(e.receivedAt)}
                   </p>
@@ -190,6 +204,11 @@ export default async function PortariaEncomendasPage({
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {e.wasScanned && (
+                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                      IA
+                    </Badge>
+                  )}
                   {e.status === "PENDENTE" ? (
                     <>
                       <Badge variant="destructive">Pendente</Badge>

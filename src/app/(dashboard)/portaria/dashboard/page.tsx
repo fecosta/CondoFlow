@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { getTenantId } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, UserCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Package, UserCheck, Camera } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
 import { VisitanteEntryButtons } from "@/components/visitantes/entry-buttons";
@@ -85,14 +86,21 @@ export default async function PortariaDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
             <span className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Encomendas Pendentes ({pendingEncomendas.length})
             </span>
-            <Link href="/portaria/encomendas" className="text-sm font-normal text-blue-600 hover:underline">
-              Ver todas
-            </Link>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/portaria/encomendas/nova">
+                  <Camera className="h-4 w-4 mr-1.5" /> Escanear
+                </Link>
+              </Button>
+              <Link href="/portaria/encomendas" className="text-sm font-normal text-blue-600 hover:underline">
+                Ver todas
+              </Link>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -201,11 +201,19 @@ model Encomenda {
   status        EncomendaStatus @default(PENDENTE)
   receivedById  String
   receivedAt    DateTime        @default(now())
-  pickedUpById  String?
-  pickedUpName  String?
-  pickedUpAt    DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  pickedUpById   String?
+  pickedUpName   String?
+  pickedUpAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  // Smart scanning fields
+  labelImageUrl  String?
+  remetente      String?
+  transportadora String?
+  codigoRastreio String?
+  scanConfidence Float?
+  wasScanned     Boolean         @default(false)
 
   unidade     Unidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
   receivedBy  User    @relation("EncomendaRecebidaPor", fields: [receivedById], references: [id])

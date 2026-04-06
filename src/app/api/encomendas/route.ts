@@ -74,16 +74,36 @@ export async function POST(req: NextRequest) {
     include: { unidade: { include: { bloco: true } } },
   });
 
+  // Audit log for AI-scanned packages
+  if (parsed.data.wasScanned) {
+    prisma.auditLog
+      .create({
+        data: {
+          action: "ENCOMENDA_CREATED_VIA_SCAN",
+          entity: "Encomenda",
+          entityId: encomenda.id,
+          userId: session.user.id,
+          details: JSON.stringify({
+            wasScanned: true,
+            scanConfidence: parsed.data.scanConfidence ?? null,
+          }),
+        },
+      })
+      .catch(() => {});
+  }
+
   // Email notification
   const emails = unidade.moradores.map((m) => m.email!).filter(Boolean);
   if (emails.length > 0) {
     sendEmailAsync({
       to: emails,
-      subject: "Nova encomenda na portaria — GCR",
+      subject: "Nova encomenda na portaria — CondoFlow",
       html: `
         <p>Olá!</p>
         <p>Uma nova encomenda foi registrada para a unidade <strong>${unidade.number}</strong>.</p>
-        ${parsed.data.description ? `<p>Descrição: ${parsed.data.description}</p>` : ""}
+        ${parsed.data.description ? `<p>Destinatário: ${parsed.data.description}</p>` : ""}
+        ${parsed.data.remetente ? `<p>Remetente: ${parsed.data.remetente}</p>` : ""}
+        ${parsed.data.codigoRastreio ? `<p>Código de Rastreio: ${parsed.data.codigoRastreio}</p>` : ""}
         <p>Dirija-se à portaria para retirar.</p>
       `,
     });
