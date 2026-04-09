@@ -5,6 +5,21 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "@/lib/auth.config";
 
+// In-memory rate limiting: max 5 attempts per 15 minutes per email
+const attemptMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(email: string): boolean {
+  const now = Date.now();
+  const entry = attemptMap.get(email);
+  if (!entry || entry.resetAt < now) {
+    attemptMap.set(email, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return false;
+  }
+  if (entry.count >= 5) return true;
+  entry.count++;
+  return false;
+}
+
 interface ExtendedUser extends User {
   role: string;
   condominioId: string | null;
@@ -31,6 +46,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const { email, password } = parsed.data;
 
+          if (isRateLimited(email)) return null;
+
           const user = await prisma.user.findUnique({
             where: { email },
             include: {
@@ -45,9 +62,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const passwordOk = await bcrypt.compare(password, user.passwordHash);
           if (!passwordOk) return null;
 
+          attemptMap.delete(email);
+
           await prisma.user.update({
             where: { id: user.id },
             data: { lastLoginAt: new Date() },
+          });
+
+          await prisma.auditLog.create({
+            data: {
+              action: "LOGIN",
+              entity: "User",
+              entityId: user.id,
+              userId: user.id,
+            },
           });
 
           const condominioUser = user.condominioUsers[0];
