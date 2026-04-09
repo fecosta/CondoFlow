@@ -20,7 +20,6 @@ import {
   Sofa,
   UserCheck,
   AlertCircle,
-  Wallet,
   BarChart2,
   Layers,
 } from "lucide-react";

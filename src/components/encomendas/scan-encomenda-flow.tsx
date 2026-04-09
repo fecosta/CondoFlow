@@ -505,7 +505,7 @@ export function ScanEncomendaFlow({ unidades }: ScanEncomendaFlowProps) {
                   <Label>Tipo de Encomenda</Label>
                   <Select
                     defaultValue={scanResult.tipoEncomenda}
-                    onValueChange={(v) => setValue("description", watch("description") ?? "")}
+                    onValueChange={() => setValue("description", watch("description") ?? "")}
                   >
                     <SelectTrigger>
                       <SelectValue />
