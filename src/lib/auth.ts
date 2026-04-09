@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { authConfig } from "@/lib/auth.config";
 
 interface ExtendedUser extends User {
   role: string;
@@ -16,11 +17,7 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -58,32 +55,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role as string,
           condominioId: condominioUser?.condominioId ?? null,
           condominioRole: condominioUser?.role ?? null,
-        };
+        } as ExtendedUser;
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        const u = user as ExtendedUser;
-        token.id = u.id;
-        token.role = u.role;
-        token.condominioId = u.condominioId;
-        token.condominioRole = u.condominioRole;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.condominioId = token.condominioId as string | null;
-        session.user.condominioRole = token.condominioRole as string | null;
-      }
-      return session;
-    },
-  },
 });

@@ -1,7 +1,10 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 import { getDashboardRoute } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 import type { UserRole } from "@/lib/permissions";
+
+const { auth } = NextAuth(authConfig);
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 

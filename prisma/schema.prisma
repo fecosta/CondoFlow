@@ -3,8 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 // ============================================
@@ -106,7 +105,7 @@ model Unidade {
   blocoId          String
   status           UnidadeStatus    @default(VAGA)
   statusFinanceiro FinanceiroStatus @default(EM_DIA)
-  obsFinanceiro    String?          @db.Text
+  obsFinanceiro    String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -164,7 +163,7 @@ enum Vinculo {
 model Comunicado {
   id            String   @id @default(cuid())
   title         String
-  content       String   @db.Text
+  content       String
   isPinned      Boolean  @default(false)
   condominioId  String
   authorId      String
@@ -234,7 +233,7 @@ enum EncomendaStatus {
 model AreaComum {
   id               String   @id @default(cuid())
   name             String
-  description      String?  @db.Text
+  description      String?
   capacity         Int?
   imageUrl         String?
   condominioId     String
@@ -261,7 +260,7 @@ model Reserva {
   areaComumId  String
   unidadeId    String
   userId       String
-  date         DateTime      @db.Date
+  date         DateTime
   startTime    String
   endTime      String
   status       ReservaStatus @default(PENDENTE)
@@ -287,8 +286,8 @@ enum ReservaStatus {
 model AgendaBloqueio {
   id          String   @id @default(cuid())
   areaComumId String
-  startDate   DateTime @db.Date
-  endDate     DateTime @db.Date
+  startDate   DateTime
+  endDate     DateTime
   reason      String?
   createdAt   DateTime @default(now())
 
@@ -308,9 +307,9 @@ model Visitante {
   unidadeId    String
   userId       String
   type         VisitaType @default(PONTUAL)
-  expectedDate DateTime?  @db.Date
-  startDate    DateTime?  @db.Date
-  endDate      DateTime?  @db.Date
+  expectedDate DateTime?
+  startDate    DateTime?
+  endDate      DateTime?
   entryAt      DateTime?
   exitAt       DateTime?
   createdAt    DateTime   @default(now())
@@ -373,13 +372,13 @@ enum PetSize {
 model Ocorrencia {
   id          String             @id @default(cuid())
   title       String
-  description String             @db.Text
+  description String
   category    OcorrenciaCategory @default(OUTROS)
   priority    OcorrenciaPriority @default(MEDIA)
   status      OcorrenciaStatus   @default(ABERTA)
   unidadeId   String
   userId      String
-  resolution  String?            @db.Text
+  resolution  String?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -416,7 +415,7 @@ enum OcorrenciaStatus {
 
 model OcorrenciaComentario {
   id           String   @id @default(cuid())
-  content      String   @db.Text
+  content      String
   isInternal   Boolean  @default(false)
   ocorrenciaId String
   userId       String
@@ -488,7 +487,7 @@ model AuditLog {
   action    String
   entity    String?
   entityId  String?
-  details   String?  @db.Text
+  details   String?
   userId    String
   createdAt DateTime @default(now())
 
