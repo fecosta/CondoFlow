@@ -19,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+.env
 
 # debug
 npm-debug.log*
@@ -37,3 +38,9 @@ next-env.d.ts
 
 /src/generated/prisma
 /_temp
+
+#AI
+/.agents
+/.claude
+/.idea
+/.qwen

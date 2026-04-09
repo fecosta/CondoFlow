@@ -25,40 +25,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        try {
+          const parsed = loginSchema.safeParse(credentials);
+          if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
+          const { email, password } = parsed.data;
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: {
-            condominioUsers: {
-              take: 1,
+          const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+              condominioUsers: {
+                take: 1,
+              },
             },
-          },
-        });
+          });
 
-        if (!user || !user.isActive) return null;
+          if (!user || !user.isActive) return null;
 
-        const passwordOk = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordOk) return null;
+          const passwordOk = await bcrypt.compare(password, user.passwordHash);
+          if (!passwordOk) return null;
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          });
 
-        const condominioUser = user.condominioUsers[0];
+          const condominioUser = user.condominioUsers[0];
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role as string,
-          condominioId: condominioUser?.condominioId ?? null,
-          condominioRole: condominioUser?.role ?? null,
-        } as ExtendedUser;
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role as string,
+            condominioId: condominioUser?.condominioId ?? null,
+            condominioRole: condominioUser?.role ?? null,
+          } as ExtendedUser;
+        } catch (error) {
+          console.error("[auth] authorize error:", error);
+          return null;
+        }
       },
     }),
   ],
