@@ -1,0 +1,303 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#1F6FEB;
+  --brand-dark:#1D4ED8;
+  --brand-light:#EFF6FF;
+  --brand-light2:#DBEAFE;
+  --navy:#0F172A;
+  --navy2:#162033;
+  --navy3:#1e3a8a;
+  --slate900:#0F172A;
+  --slate700:#334155;
+  --slate500:#64748B;
+  --slate400:#94A3B8;
+  --slate300:#CBD5E1;
+  --slate200:#E2E8F0;
+  --slate100:#F1F5F9;
+  --slate50:#F8FAFC;
+  --success:#10B981;
+  --success-bg:#ECFDF5;
+  --success-text:#065F46;
+  --warning:#F59E0B;
+  --warning-bg:#FFFBEB;
+  --warning-text:#92400E;
+  --danger:#EF4444;
+  --danger-bg:#FEF2F2;
+  --danger-text:#991B1B;
+  --radius:8px;
+  --radius-lg:12px;
+}
+.page{font-family:'Plus Jakarta Sans',sans-serif;background:#F8FAFC;min-height:100vh}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#162033 50%,#1e3a8a 100%);position:relative;overflow:hidden;padding:3rem 2rem 2.5rem;text-align:center}
+.hero-grid{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M0 0h1v40H0zm39 0h1v40h-1zM0 0v1h40V0zm0 39v1h40v-1z'/%3E%3C/g%3E%3C/svg%3E");background-size:40px 40px;pointer-events:none}
+.hero-orb1{position:absolute;top:-60px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.2) 0%,transparent 70%);pointer-events:none}
+.hero-orb2{position:absolute;bottom:-80px;left:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,transparent 65%);pointer-events:none}
+.logo-wrap{position:relative;z-index:1;display:inline-flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.logo-icon{width:36px;height:36px}
+.logo-text{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.hero h1{position:relative;z-index:1;font-size:26px;font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1.2;margin-bottom:.6rem}
+.hero h1 span{color:rgba(255,255,255,.5)}
+.hero p{position:relative;z-index:1;font-size:14px;color:rgba(255,255,255,.45);max-width:460px;margin:0 auto 1.5rem;line-height:1.7}
+.hero-pills{position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.hero-pill{padding:4px 14px;border-radius:999px;font-size:12px;font-weight:600;color:rgba(255,255,255,.55);background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.1)}
+
+/* BODY */
+.body{max-width:860px;margin:0 auto;padding:2rem 1rem 3rem}
+
+/* SECTION */
+.s-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--slate500);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:.5px solid var(--slate200)}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:0;margin-bottom:2.5rem}
+.step{display:flex;gap:16px;padding:1rem 0;border-bottom:.5px solid var(--slate200)}
+.step:last-child{border-bottom:none}
+.step-num{width:30px;height:30px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;margin-top:1px}
+.step-t{font-size:14px;font-weight:700;color:var(--slate900);margin-bottom:3px;letter-spacing:-.01em}
+.step-d{font-size:13px;color:var(--slate500);line-height:1.65}
+.step-d code{background:#fff;border:.5px solid var(--slate200);border-radius:4px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--brand-dark)}
+
+/* CREDENTIALS */
+.creds{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:2.5rem}
+.cred{background:#fff;border:.5px solid var(--slate200);border-radius:var(--radius-lg);padding:1rem 1.125rem;position:relative;overflow:hidden}
+.cred::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.cred-admin::before{background:var(--brand)}
+.cred-sindico::before{background:var(--success)}
+.cred-porteiro::before{background:var(--warning)}
+.cred-morador::before{background:var(--danger)}
+.cred-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:4px;margin-bottom:.625rem}
+.badge-admin{background:var(--brand-light2);color:#1D4ED8}
+.badge-sindico{background:var(--success-bg);color:var(--success-text)}
+.badge-porteiro{background:var(--warning-bg);color:var(--warning-text)}
+.badge-morador{background:var(--danger-bg);color:var(--danger-text)}
+.cred-email{font-size:12.5px;color:var(--slate500);margin-bottom:.375rem;word-break:break-all}
+.cred-row{display:flex;align-items:baseline;gap:6px}
+.cred-lbl{font-size:10px;color:var(--slate400);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.cred-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;color:var(--slate900)}
+
+/* PROFILES */
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.profile{background:#fff;border:.5px solid var(--slate200);border-radius:var(--radius-lg);overflow:hidden}
+.p-header{padding:.875rem 1.25rem;display:flex;align-items:center;gap:12px;border-bottom:.5px solid var(--slate200)}
+.p-avatar{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.av-admin{background:var(--brand-light2);color:#1D4ED8}
+.av-sindico{background:var(--success-bg);color:var(--success-text)}
+.av-porteiro{background:var(--warning-bg);color:var(--warning-text)}
+.av-morador{background:var(--danger-bg);color:var(--danger-text)}
+.p-name{font-size:14px;font-weight:800;color:var(--slate900);letter-spacing:-.01em}
+.p-sub{font-size:12px;color:var(--slate500);margin-top:1px}
+.p-body{padding:1rem 1.25rem}
+.feat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate400);margin-bottom:.625rem}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:5px}
+.feat-item{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--slate500);line-height:1.55}
+.feat-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.fd-admin{background:var(--brand)}
+.fd-sindico{background:var(--success)}
+.fd-porteiro{background:var(--warning)}
+.fd-morador{background:var(--danger)}
+.route-tag{display:inline-flex;align-items:center;gap:5px;margin-top:.875rem;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.rt-admin{background:var(--brand-light);color:var(--brand-dark)}
+.rt-sindico{background:var(--success-bg);color:var(--success-text)}
+.rt-porteiro{background:var(--warning-bg);color:var(--warning-text)}
+.rt-morador{background:var(--danger-bg);color:var(--danger-text)}
+.arrow{font-size:9px;opacity:.7}
+
+/* NOTE */
+.note{background:#fff;border:.5px solid var(--slate200);border-left:3px solid var(--brand);border-radius:0 var(--radius) var(--radius) 0;padding:.875rem 1rem;font-size:12.5px;color:var(--slate500);line-height:1.65;margin-top:1.75rem}
+.note strong{color:var(--slate900);font-weight:700}
+.note code{background:var(--brand-light);border:.5px solid var(--brand-light2);border-radius:3px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--brand-dark)}
+
+.mb-section{margin-bottom:2.5rem}
+</style>
+
+<div class="page">
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-orb1"></div>
+    <div class="hero-orb2"></div>
+    <div class="logo-wrap">
+      <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="white" fill-opacity="0.15"/>
+        <path d="M16 6L6 12v14h8v-8h4v8h8V12L16 6z" fill="white" fill-opacity="0.9"/>
+        <rect x="13" y="18" width="6" height="8" rx="1" fill="white" fill-opacity="0.4"/>
+      </svg>
+      <span class="logo-text">CondoFlow</span>
+    </div>
+    <h1>Tutorial de acesso<br><span>à plataforma</span></h1>
+    <p>Guia de como acessar o ambiente de demonstração e o que cada perfil pode fazer no sistema.</p>
+    <div class="hero-pills">
+      <span class="hero-pill">Comunicados</span>
+      <span class="hero-pill">Encomendas</span>
+      <span class="hero-pill">Reservas</span>
+      <span class="hero-pill">Portaria</span>
+      <span class="hero-pill">Ocorrências</span>
+      <span class="hero-pill">Financeiro</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="mb-section">
+      <div class="s-title">Como acessar</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-t">Abra a página de login</div>
+            <div class="step-d">Acesse a aplicação pelo navegador. Você será redirecionado automaticamente para <code>/login</code>.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-t">Escolha um perfil de teste</div>
+            <div class="step-d">Use um dos e-mails e senhas listados abaixo. Cada credencial corresponde a um papel diferente — com telas e permissões distintas.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-t">Explore o painel correspondente</div>
+            <div class="step-d">Após o login, você será redirecionado automaticamente para o painel correto. Navegue pelo menu lateral para explorar as funcionalidades.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <div class="step-t">Troque de perfil quando quiser</div>
+            <div class="step-d">Clique em <code>Sair</code> no menu lateral para encerrar a sessão e entrar com outro e-mail de teste.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-section">
+      <div class="s-title">Dados de acesso para teste</div>
+      <div class="creds">
+        <div class="cred cred-admin">
+          <div><span class="cred-badge badge-admin">Super Admin</span></div>
+          <div class="cred-email">admin@teste.com</div>
+          <div class="cred-row"><span class="cred-lbl">Senha</span><span class="cred-val">senha123</span></div>
+        </div>
+        <div class="cred cred-sindico">
+          <div><span class="cred-badge badge-sindico">Síndico</span></div>
+          <div class="cred-email">sindico@condo1.com</div>
+          <div class="cred-row"><span class="cred-lbl">Senha</span><span class="cred-val">senha123</span></div>
+        </div>
+        <div class="cred cred-porteiro">
+          <div><span class="cred-badge badge-porteiro">Porteiro</span></div>
+          <div class="cred-email">porteiro@condo1.com</div>
+          <div class="cred-row"><span class="cred-lbl">Senha</span><span class="cred-val">senha123</span></div>
+        </div>
+        <div class="cred cred-morador">
+          <div><span class="cred-badge badge-morador">Morador</span></div>
+          <div class="cred-email">morador@condo1.com</div>
+          <div class="cred-row"><span class="cred-lbl">Senha</span><span class="cred-val">senha123</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-section">
+      <div class="s-title">O que cada perfil acessa</div>
+      <div class="profiles">
+
+        <div class="profile">
+          <div class="p-header">
+            <div class="p-avatar av-admin">SA</div>
+            <div>
+              <div class="p-name">Super Admin</div>
+              <div class="p-sub">Gestão global da plataforma</div>
+            </div>
+          </div>
+          <div class="p-body">
+            <div class="feat-lbl">Funcionalidades</div>
+            <ul class="feat-list">
+              <li class="feat-item"><span class="feat-dot fd-admin"></span>Criar, editar e excluir condomínios</li>
+              <li class="feat-item"><span class="feat-dot fd-admin"></span>Cadastrar e gerenciar síndicos por condomínio</li>
+              <li class="feat-item"><span class="feat-dot fd-admin"></span>Alternar entre condomínios na mesma sessão</li>
+              <li class="feat-item"><span class="feat-dot fd-admin"></span>Acesso total a todas as telas e dados de qualquer condomínio</li>
+              <li class="feat-item"><span class="feat-dot fd-admin"></span>Visualizar e administrar usuários do sistema</li>
+            </ul>
+            <div class="route-tag rt-admin"><span class="arrow">→</span>/admin/condominios</div>
+          </div>
+        </div>
+
+        <div class="profile">
+          <div class="p-header">
+            <div class="p-avatar av-sindico">SÍ</div>
+            <div>
+              <div class="p-name">Síndico</div>
+              <div class="p-sub">Administração do condomínio</div>
+            </div>
+          </div>
+          <div class="p-body">
+            <div class="feat-lbl">Funcionalidades</div>
+            <ul class="feat-list">
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Painel com indicadores: unidades, moradores, encomendas, reservas</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Gerenciar blocos, unidades e moradores (com importação CSV)</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Publicar e fixar comunicados, ver taxa de leitura</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Gerenciar áreas comuns e aprovar/rejeitar reservas</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Acompanhar e responder ocorrências dos moradores</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Controle financeiro por unidade (Em Dia, Pendente, Inadimplente)</li>
+              <li class="feat-item"><span class="feat-dot fd-sindico"></span>Cadastrar e gerenciar porteiros</li>
+            </ul>
+            <div class="route-tag rt-sindico"><span class="arrow">→</span>/sindico/dashboard</div>
+          </div>
+        </div>
+
+        <div class="profile">
+          <div class="p-header">
+            <div class="p-avatar av-porteiro">PO</div>
+            <div>
+              <div class="p-name">Porteiro</div>
+              <div class="p-sub">Controle de portaria</div>
+            </div>
+          </div>
+          <div class="p-body">
+            <div class="feat-lbl">Funcionalidades</div>
+            <ul class="feat-list">
+              <li class="feat-item"><span class="feat-dot fd-porteiro"></span>Painel com encomendas pendentes e visitantes esperados hoje</li>
+              <li class="feat-item"><span class="feat-dot fd-porteiro"></span>Registrar novas encomendas (manual ou escaneamento de etiqueta com IA)</li>
+              <li class="feat-item"><span class="feat-dot fd-porteiro"></span>Registrar retirada com nome de quem retirou</li>
+              <li class="feat-item"><span class="feat-dot fd-porteiro"></span>Consultar visitantes esperados e registrar entrada/saída</li>
+              <li class="feat-item"><span class="feat-dot fd-porteiro"></span>Consultar lista de moradores por bloco ou unidade</li>
+            </ul>
+            <div class="route-tag rt-porteiro"><span class="arrow">→</span>/portaria/dashboard</div>
+          </div>
+        </div>
+
+        <div class="profile">
+          <div class="p-header">
+            <div class="p-avatar av-morador">MO</div>
+            <div>
+              <div class="p-name">Morador</div>
+              <div class="p-sub">Acesso do condômino</div>
+            </div>
+          </div>
+          <div class="p-body">
+            <div class="feat-lbl">Funcionalidades</div>
+            <ul class="feat-list">
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Painel com comunicados não lidos e encomendas pendentes</li>
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Ler comunicados (leitura registrada automaticamente)</li>
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Solicitar e cancelar reservas de áreas comuns</li>
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Pré-cadastrar visitantes (pontual ou recorrente)</li>
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Abrir e acompanhar ocorrências com comentários</li>
+              <li class="feat-item"><span class="feat-dot fd-morador"></span>Gerenciar preferências de notificação por e-mail</li>
+            </ul>
+            <div class="route-tag rt-morador"><span class="arrow">→</span>/morador/dashboard</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="note">
+        <strong>Sobre os dados de teste:</strong> o seed cria 2 condomínios com blocos, unidades, moradores, 3 comunicados (1 fixado), 5 encomendas (3 pendentes e 2 entregues) e 1 porteiro por condomínio. Todos os usuários de teste usam a senha <code>senha123</code>.
+      </div>
+    </div>
+
+  </div>
+</div>
